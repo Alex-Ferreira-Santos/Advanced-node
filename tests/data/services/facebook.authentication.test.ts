@@ -20,9 +20,10 @@ describe('FacebookAuthenticationService', () => {
     LoadUserAccountRepository & SaveFacebookAccountRepository
   >
   let sut: FacebookAuthenticationService
-  const token = 'any_token'
+  let token: string
 
-  beforeEach(() => {
+  beforeAll(() => {
+    token = 'any_token'
     facebookUserApi = mock()
     facebookUserApi.loadUser.mockResolvedValue({
       name: 'any_fb_name',
@@ -34,6 +35,9 @@ describe('FacebookAuthenticationService', () => {
     userAccountRepo = mock()
     userAccountRepo.load.mockResolvedValue(undefined)
     userAccountRepo.saveWithFacebook.mockResolvedValue({ id: 'any_account_id' })
+  })
+
+  beforeEach(() => {
     sut = new FacebookAuthenticationService(
       facebookUserApi,
       userAccountRepo,
@@ -116,7 +120,9 @@ describe('FacebookAuthenticationService', () => {
   })
 
   it('should rethrow if SaveWithFacebook throws', async () => {
-    userAccountRepo.saveWithFacebook.mockRejectedValueOnce(new Error('save_error'))
+    userAccountRepo.saveWithFacebook.mockRejectedValueOnce(
+      new Error('save_error')
+    )
 
     const promise = sut.perform({ token })
 
