@@ -1,44 +1,16 @@
-import { LoadUserAccountRepository } from '@/data/contracts/repos'
-import { IBackup, newDb } from 'pg-mem'
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  Repository,
-  getConnection,
-  getRepository
-} from 'typeorm'
+import { IBackup, IMemoryDb, newDb } from 'pg-mem'
+import { Repository, getConnection, getRepository } from 'typeorm'
+import { PgUser } from '@/infra/postgres/entities'
+import { PgUserAccountRepository } from '@/infra/postgres/repos'
 
-class PgUserAccountRepository implements LoadUserAccountRepository {
-  // constructor(private readonly dataSource: DataSource) {}
-
-  async load(
-    params: LoadUserAccountRepository.Params
-  ): Promise<LoadUserAccountRepository.Result> {
-    const pgUserRepo = getRepository(PgUser)
-    const pgUser = await pgUserRepo.findOne({ where: { email: params.email } })
-    if (pgUser !== undefined) {
-      return {
-        id: pgUser.id?.toString(),
-        name: pgUser?.name ?? undefined
-      }
-    }
-  }
-}
-
-@Entity({ name: 'usuarios' })
-class PgUser {
-  @PrimaryGeneratedColumn()
-  id!: number
-
-  @Column({ nullable: true, name: 'nome' })
-  name?: string
-
-  @Column()
-  email!: string
-
-  @Column({ nullable: true, name: 'id_facebook' })
-  facebookId?: number
+const makeFakeDb = async (entities?: any[]): Promise<IMemoryDb> => {
+  const db = newDb({ autoCreateForeignKeyIndices: true })
+  const connection = await db.adapters.createTypeormConnection({
+    type: 'postgres',
+    entities: entities ?? ['src/infra/postgres/entities/index.ts']
+  })
+  await connection.synchronize()
+  return db
 }
 
 describe('PgUserAccountRepository', () => {
@@ -48,12 +20,7 @@ describe('PgUserAccountRepository', () => {
     let backup: IBackup
 
     beforeAll(async () => {
-      const db = newDb({ autoCreateForeignKeyIndices: true })
-      const connection = await db.adapters.createTypeormConnection({
-        type: 'postgres',
-        entities: [PgUser]
-      })
-      await connection.synchronize()
+      const db = await makeFakeDb([PgUser])
       backup = db.backup()
       pgUserRepo = getRepository(PgUser)
     })
