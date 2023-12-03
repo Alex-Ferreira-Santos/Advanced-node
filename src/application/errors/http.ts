@@ -8,7 +8,7 @@ export class ServerError extends Error {
 
 export class RequiredFieldError extends Error {
   constructor(fieldName: string) {
-    super(`The ${fieldName} token is required`)
+    super(`The field ${fieldName} is required`)
     this.name = 'RequiredFieldError'
   }
 }
