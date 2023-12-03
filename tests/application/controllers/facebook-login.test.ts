@@ -1,5 +1,13 @@
+import { FacebookAuthentication } from '@/domain/features'
+import { mock } from 'jest-mock-extended'
+
 class FacebookLoginController {
+  constructor(
+    private readonly facebookAuthentication: FacebookAuthentication
+  ) {}
+
   async handle(httpRequest: any): Promise<HttpResponse> {
+    await this.facebookAuthentication.perform({ token: httpRequest.token })
     return {
       statusCode: 400,
       data: new Error('The field token is required')
@@ -14,9 +22,14 @@ type HttpResponse = {
 
 describe('FacebookLoginController', () => {
   let sut: FacebookLoginController
+  let facebookAuth: jest.Mocked<FacebookAuthentication>
+
+  beforeAll(() => {
+    facebookAuth = mock()
+  })
 
   beforeEach(() => {
-    sut = new FacebookLoginController()
+    sut = new FacebookLoginController(facebookAuth)
   })
   it('should return 400 if token is empty', async () => {
     const httpResponse = await sut.handle({ token: '' })
@@ -40,5 +53,13 @@ describe('FacebookLoginController', () => {
       statusCode: 400,
       data: new Error('The field token is required')
     })
+  })
+
+  it('should call facebook authentication with corret params', async () => {
+    await sut.handle({ token: 'any_token' })
+    expect(facebookAuth.perform).toHaveBeenCalledWith({
+      token: 'any_token'
+    })
+    expect(facebookAuth.perform).toHaveBeenCalledTimes(1)
   })
 })
